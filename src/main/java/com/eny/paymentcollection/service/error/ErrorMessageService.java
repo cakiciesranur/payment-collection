@@ -17,8 +17,8 @@ public class ErrorMessageService {
     private ErrorMessageRepository errorMessageRepository;
 
     public ErrorMessageEntity getErrorMessage(int errorCode) {
-        ErrorMessageEntity errorMessage =  errorMessageRepository.findByErrorCode(errorCode);
-        if(errorMessage == null){
+        ErrorMessageEntity errorMessage = errorMessageRepository.findByErrorCode(errorCode);
+        if (errorMessage == null) {
             return errorMessageRepository.findByErrorCode(ErrorMessageConstant.UNKNOWN_ERROR);
         }
         return errorMessage;
@@ -26,7 +26,7 @@ public class ErrorMessageService {
 
     public String getErrorMessageText(int errorCode) {
         ErrorMessageEntity errorMessage = errorMessageRepository.findByErrorCode(errorCode);
-        if(errorMessage == null){
+        if (errorMessage == null) {
             return errorMessageRepository.findByErrorCode(ErrorMessageConstant.UNKNOWN_ERROR).getMessage();
         }
         return errorMessage.getMessage();

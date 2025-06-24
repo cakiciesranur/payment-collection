@@ -1,6 +1,6 @@
 package com.eny.paymentcollection.dto.response;
 
-import com.eny.paymentcollection.constants.*;
+import com.eny.paymentcollection.constants.AuthenticationConstants;
 import lombok.Data;
 
 @Data

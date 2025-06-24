@@ -1,13 +1,13 @@
 package com.eny.paymentcollection.service.impl;
 
-import com.eny.paymentcollection.converter.UserMapper;
 import com.eny.paymentcollection.dto.request.SignUpDto;
 import com.eny.paymentcollection.dto.request.UpdateUserDto;
 import com.eny.paymentcollection.enums.RoleName;
 import com.eny.paymentcollection.exception.EmailAlreadyExistsException;
+import com.eny.paymentcollection.exception.ResourceNotFoundException;
 import com.eny.paymentcollection.exception.UserCreationException;
-import com.eny.paymentcollection.exception.UserNotFound;
 import com.eny.paymentcollection.exception.UsernameAlreadyExistsException;
+import com.eny.paymentcollection.mapper.UserMapper;
 import com.eny.paymentcollection.model.RoleEntity;
 import com.eny.paymentcollection.model.UserEntity;
 import com.eny.paymentcollection.repository.RoleRepository;
@@ -16,6 +16,7 @@ import com.eny.paymentcollection.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,7 @@ public class UserServiceImpl implements IUserService {
     private UserMapper userMapper;
 
     @Override
+    @Transactional
     public UserEntity createUser(SignUpDto signUpDto) {
         if (userRepository.existsByUsername(signUpDto.getUsername())) {
             throw new UsernameAlreadyExistsException();
@@ -82,7 +84,7 @@ public class UserServiceImpl implements IUserService {
 
             return newEntity;
         } else {
-            throw new UserNotFound();
+            throw new ResourceNotFoundException("User not found");
         }
     }
 

@@ -4,8 +4,7 @@ public enum ResponseType {
 
     ERROR("ERROR"),
     REDIRECT("REDIRECT"),
-    SUCCESS("SUCCESS")
-    ;
+    SUCCESS("SUCCESS");
 
     private final String text;
 

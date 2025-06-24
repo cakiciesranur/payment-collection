@@ -35,6 +35,11 @@ public class ErrorMessageDataService {
             errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.NOT_FOUND, "Nothing found, something wrong!"));
             errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.AUTHORIZATION_ERROR, "You are not authorized!"));
             errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.UNKNOWN_ERROR, "Unknown Error!"));
+            errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.CUSTOMER_NOT_FOUND, "Customer not found"));
+            errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.PAYMENT_NOT_FOUND, "Payment not found"));
+            errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.DUPLICATE_CUSTOMER_CODE, "Customer code already exists"));
+            errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.INVALID_PAYMENT_AMOUNT, "Invalid payment amount"));
+            errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.PAYMENT_ALREADY_COMPLETED, "Payment already completed"));
 
             errorMessageRepository.saveAll(errorMessages);
         }

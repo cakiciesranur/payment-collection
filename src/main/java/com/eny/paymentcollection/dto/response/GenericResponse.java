@@ -13,11 +13,11 @@ public class GenericResponse<T> {
     private String message;
     private T data;
 
-    public GenericResponse(){
+    public GenericResponse() {
 
     }
 
-    public GenericResponse(ResponseType responseType,int errorCode, String message, T data){
+    public GenericResponse(ResponseType responseType, int errorCode, String message, T data) {
         this.responseType = responseType;
         this.errorCode = errorCode;
         this.message = message;
