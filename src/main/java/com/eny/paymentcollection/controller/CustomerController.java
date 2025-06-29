@@ -1,10 +1,11 @@
 package com.eny.paymentcollection.controller;
 
-import com.eny.paymentcollection.dto.request.CustomerDto;
+import com.eny.paymentcollection.dto.request.CustomerRequestDto;
+import com.eny.paymentcollection.dto.response.CustomerResponseDto;
 import com.eny.paymentcollection.dto.response.GenericResponse;
 import com.eny.paymentcollection.enums.CustomerStatus;
-import com.eny.paymentcollection.service.CustomerService;
 import com.eny.paymentcollection.service.GenericResponseService;
+import com.eny.paymentcollection.service.ICustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -13,7 +14,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,129 +35,104 @@ import java.util.List;
 @SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Customer Management", description = "Customer operations")
 public class CustomerController {
-
-    private final CustomerService customerService;
+    private final ICustomerService customerService;
     private final GenericResponseService genericResponseService;
 
     @GetMapping
     @Operation(summary = "Get all customers with pagination")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<Page<CustomerDto>>> getAllCustomers(
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_ACCOUNTANT') or hasAuthority('ROLE_MANAGER') or hasAuthority('ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<Page<CustomerResponseDto>>> getAllCustomers(
             @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "Sort field") @RequestParam(defaultValue = "companyName") String sortBy,
-            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "asc") String sortDir) {
+            @Parameter(description = "Sort direction (asc or desc)") @RequestParam(defaultValue = "asc") String sortDir) {
 
-        log.debug("Getting all customers - page: {}, size: {}, sortBy: {}, sortDir: {}",
-                page, size, sortBy, sortDir);
-
-        Page<CustomerDto> customers = customerService.getAllCustomers(page, size, sortBy, sortDir);
-        GenericResponse<Page<CustomerDto>> response = genericResponseService.createResponseNoError("Customers retrieved successfully", customers);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        Page<CustomerResponseDto> customers = customerService.getAllCustomers(page, size, sortBy, sortDir);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customers retrieved successfully", customers));
     }
-
 
     @GetMapping("/{id}")
     @Operation(summary = "Get customer by ID")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<CustomerDto>> getCustomerById(
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_ACCOUNTANT') or hasAuthority('ROLE_MANAGER') or hasAuthority('ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<CustomerResponseDto>> getCustomerById(
             @Parameter(description = "Customer ID") @PathVariable Long id) {
 
-        log.debug("Getting customer by id: {}", id);
-
-        CustomerDto customer = customerService.getCustomerById(id);
-        GenericResponse<CustomerDto> response = genericResponseService.createResponseNoError("Customer retrieved successfully", customer);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        CustomerResponseDto customer = customerService.getCustomerById(id);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customer retrieved successfully", customer));
     }
 
     @GetMapping("/code/{customerCode}")
     @Operation(summary = "Get customer by customer code")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<CustomerDto>> getCustomerByCode(
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_ACCOUNTANT') or hasAuthority('ROLE_MANAGER') or hasAuthority('ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<CustomerResponseDto>> getCustomerByCode(
             @Parameter(description = "Customer code") @PathVariable String customerCode) {
 
-        log.debug("Getting customer by code: {}", customerCode);
-
-        CustomerDto customer = customerService.getCustomerByCode(customerCode);
-        GenericResponse<CustomerDto> response = genericResponseService.createResponseNoError("Customer retrieved successfully", customer);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        CustomerResponseDto customer = customerService.getCustomerByCode(customerCode);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customer retrieved successfully", customer));
     }
 
     @PostMapping
-    @Operation(summary = "Create new customer")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
-    public ResponseEntity<GenericResponse<CustomerDto>> createCustomer(
-            @Parameter(description = "Customer data") @Valid @RequestBody CustomerDto customerDto) {
+    @Operation(summary = "Create a new customer")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_ACCOUNTANT')")
+    public ResponseEntity<GenericResponse<CustomerResponseDto>> createCustomer(
+            @Parameter(description = "Customer data") @Valid @RequestBody CustomerRequestDto customerRequestDto) {
 
-        log.debug("Creating new customer: {}", customerDto.getCustomerCode());
-
-        CustomerDto createdCustomer = customerService.createCustomer(customerDto);
-        GenericResponse<CustomerDto> response = genericResponseService.createResponseNoError("Customer created successfully", createdCustomer);
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        CustomerResponseDto createdCustomer = customerService.createCustomer(customerRequestDto);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customer created successfully", createdCustomer));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update customer")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
-    public ResponseEntity<GenericResponse<CustomerDto>> updateCustomer(
+    @Operation(summary = "Update existing customer")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_ACCOUNTANT')")
+    public ResponseEntity<GenericResponse<CustomerResponseDto>> updateCustomer(
             @Parameter(description = "Customer ID") @PathVariable Long id,
-            @Parameter(description = "Updated customer data") @Valid @RequestBody CustomerDto customerDto) {
+            @Parameter(description = "Updated customer data") @Valid @RequestBody CustomerRequestDto customerRequestDto) {
 
-        log.debug("Updating customer with id: {}", id);
-
-        CustomerDto updatedCustomer = customerService.updateCustomer(id, customerDto);
-        GenericResponse<CustomerDto> response = genericResponseService.createResponseNoError("Customer updated successfully", updatedCustomer);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        CustomerResponseDto updated = customerService.updateCustomer(id, customerRequestDto);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customer updated successfully", updated));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete customer")
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Delete a customer")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<GenericResponse<Void>> deleteCustomer(
             @Parameter(description = "Customer ID") @PathVariable Long id) {
 
-        log.debug("Deleting customer with id: {}", id);
-
         customerService.deleteCustomer(id);
-        GenericResponse<Void> response = genericResponseService.createResponseNoError("Customer deleted successfully", null);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customer deleted successfully", null));
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search customers")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<Page<CustomerDto>>> searchCustomers(
+    @Operation(summary = "Search customers by name or code")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_ACCOUNTANT') or hasAuthority('ROLE_MANAGER') or hasAuthority('ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<Page<CustomerResponseDto>>> searchCustomers(
             @Parameter(description = "Search term") @RequestParam String searchTerm,
-            @Parameter(description = "Page number") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Sort field") @RequestParam(defaultValue = "companyName") String sortBy,
-            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "companyName") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
 
-        log.debug("Searching customers with term: {}", searchTerm);
-
-        Page<CustomerDto> customers = customerService.searchCustomers(searchTerm, page, size, sortBy, sortDir);
-        GenericResponse<Page<CustomerDto>> response = genericResponseService.createResponseNoError("Customers found", customers);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        Page<CustomerResponseDto> customers = customerService.searchCustomers(searchTerm, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customers found", customers));
     }
 
     @GetMapping("/status/{status}")
     @Operation(summary = "Get customers by status")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<List<CustomerDto>>> getCustomersByStatus(
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_ACCOUNTANT') or hasAuthority('ROLE_MANAGER') or hasAuthority('ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<List<CustomerResponseDto>>> getCustomersByStatus(
             @Parameter(description = "Customer status") @PathVariable CustomerStatus status) {
 
-        log.debug("Getting customers by status: {}", status);
+        List<CustomerResponseDto> customers = customerService.getCustomersByStatus(status);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customers by status retrieved successfully", customers));
+    }
 
-        List<CustomerDto> customers = customerService.getCustomersByStatus(status);
-        GenericResponse<List<CustomerDto>> response = genericResponseService.createResponseNoError("Customers retrieved successfully", customers);
+    @GetMapping("/exists/{customerCode}")
+    @Operation(summary = "Check if a customer exists by customer code")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_ACCOUNTANT')")
+    public ResponseEntity<GenericResponse<Boolean>> existsByCustomerCode(
+            @Parameter(description = "Customer code") @PathVariable String customerCode) {
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        boolean exists = customerService.existsByCustomerCode(customerCode);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customer existence checked", exists));
     }
 }

@@ -5,55 +5,58 @@ import com.eny.paymentcollection.dto.response.GenericResponse;
 import com.eny.paymentcollection.enums.ResponseType;
 import com.eny.paymentcollection.model.ErrorMessageEntity;
 import com.eny.paymentcollection.service.error.ErrorMessageService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * Utility service to create standardized API responses.
+ */
 @Service
+@RequiredArgsConstructor
 public class GenericResponseService {
+    private final ErrorMessageService errorMessageService;
 
-    @Autowired
-    private ErrorMessageService errorMessageService;
-
-    public <T> GenericResponse createResponse(ResponseType responseType, String message, T data, int errorCode) {
-        GenericResponse<T> response = new GenericResponse<T>()
-                .setData(data)
-                .setResponseType(responseType)
+    //TODO: provide these methods by util classes.
+    public <T> GenericResponse<T> createSuccessResponse(String message, T data) {
+        return new GenericResponse<T>()
+                .setResponseType(ResponseType.SUCCESS)
                 .setMessage(message)
-                .setErrorCode(errorCode);
-        return response;
+                .setData(data);
     }
 
-    public <T> GenericResponse createResponseNoError(String message, T data) {
-        return createResponse(ResponseType.SUCCESS, message, data, ErrorMessageConstant.NO_ERROR);
+    public <T> GenericResponse<T> createSuccessResponse(T data) {
+        return createSuccessResponse(null, data);
     }
 
-    public <T> GenericResponse createResponseNoError(T data) {
-        return createResponse(ResponseType.SUCCESS, null, data, ErrorMessageConstant.NO_ERROR);
+    public <T> GenericResponse<T> createErrorResponse(String message) {
+        return createErrorResponse(ErrorMessageConstant.UNKNOWN_ERROR, message, null);
     }
 
-    public <T> GenericResponse createResponseWithError(String message) {
-        return createResponse(ResponseType.ERROR, message, null, ErrorMessageConstant.UNKNOWN_ERROR);
+    public <T> GenericResponse<T> createErrorResponse(String message, T data) {
+        return createErrorResponse(ErrorMessageConstant.UNKNOWN_ERROR, message, data);
     }
 
-    public <T> GenericResponse createResponseWithError(String message, T data) {
-        return createResponse(ResponseType.ERROR, message, data, ErrorMessageConstant.UNKNOWN_ERROR);
-    }
-
-    public <T> GenericResponse createResponseWithError(int errorCode, T data) {
+    public <T> GenericResponse<T> createErrorResponse(int errorCode) {
         ErrorMessageEntity errorMessage = errorMessageService.getErrorMessage(errorCode);
-        return createResponse(ResponseType.ERROR, errorMessage.getMessage(), data, errorCode);
+        return createErrorResponse(errorCode, errorMessage.getMessage(), null);
     }
 
-    public <T> GenericResponse createResponseWithError(int errorCode) {
-        ErrorMessageEntity errorMessage = errorMessageService.getErrorMessage(errorCode);
-        return createResponse(ResponseType.ERROR, errorMessage.getMessage(), null, errorCode);
+    public <T> GenericResponse<T> createErrorResponse(int errorCode, String message, T data) {
+        return new GenericResponse<T>()
+                .setResponseType(ResponseType.ERROR)
+                .setErrorCode(errorCode)
+                .setMessage(message)
+                .setData(data);
     }
 
-    public <T> GenericResponse createResponseWithRedirect(String newURl, T data) {
-        return createResponse(ResponseType.REDIRECT, newURl, data, ErrorMessageConstant.NO_ERROR);
+    public <T> GenericResponse<T> createRedirectResponse(String redirectUrl, T data) {
+        return new GenericResponse<T>()
+                .setResponseType(ResponseType.REDIRECT)
+                .setMessage(redirectUrl)
+                .setData(data);
     }
 
-    public <T> GenericResponse createResponseWithRedirect(String relativeNewURL) {
-        return createResponse(ResponseType.REDIRECT, relativeNewURL, null, ErrorMessageConstant.NO_ERROR);
+    public <T> GenericResponse<T> createRedirectResponse(String redirectUrl) {
+        return createRedirectResponse(redirectUrl, null);
     }
 }

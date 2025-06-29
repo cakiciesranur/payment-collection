@@ -2,10 +2,10 @@ package com.eny.paymentcollection.service.impl;
 
 import com.eny.paymentcollection.dto.request.SignUpDto;
 import com.eny.paymentcollection.dto.request.UpdateUserDto;
+import com.eny.paymentcollection.dto.response.UserResponseDto;
 import com.eny.paymentcollection.enums.RoleName;
 import com.eny.paymentcollection.exception.EmailAlreadyExistsException;
 import com.eny.paymentcollection.exception.ResourceNotFoundException;
-import com.eny.paymentcollection.exception.UserCreationException;
 import com.eny.paymentcollection.exception.UsernameAlreadyExistsException;
 import com.eny.paymentcollection.mapper.UserMapper;
 import com.eny.paymentcollection.model.RoleEntity;
@@ -13,79 +13,97 @@ import com.eny.paymentcollection.model.UserEntity;
 import com.eny.paymentcollection.repository.RoleRepository;
 import com.eny.paymentcollection.repository.UserRepository;
 import com.eny.paymentcollection.service.IUserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private UserMapper userMapper;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
-    public UserEntity createUser(SignUpDto signUpDto) {
-        if (userRepository.existsByUsername(signUpDto.getUsername())) {
+    public UserResponseDto createUser(SignUpDto request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
             throw new UsernameAlreadyExistsException();
         }
 
-        if (userRepository.existsByEmail(signUpDto.getEmail())) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException();
         }
 
-        // Creating user's account
-        UserEntity user = new UserEntity(signUpDto.getName(), signUpDto.getUsername(),
-                signUpDto.getEmail(), signUpDto.getPassword());
+        UserEntity user = new UserEntity();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setName(request.getName());
+        user.setRoles(resolveRoles(request.getRoles()));
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        RoleEntity userRole = roleRepository.findByName(RoleName.ROLE_USER)
-                .orElseThrow(UserCreationException::new);
-
-        user.setRoles(Collections.singleton(userRole));
-
-        return userRepository.save(user);
+        UserEntity saved = userRepository.save(user);
+        return userMapper.toResponse(saved);
     }
 
     @Override
-    public List<UserEntity> getAllUsers() {
+    public List<UserResponseDto> getAllUsers() {
 
         List<UserEntity> userList = userRepository.findAll();
 
         if (!userList.isEmpty()) {
-            return userList;
+            return userMapper.toResponseList(userList);
         } else {
             return Collections.emptyList();
         }
     }
 
-    public UserEntity updateUser(UpdateUserDto dto) {
-        UserEntity entity = userMapper.toEntity(dto);
-        Optional<UserEntity> user = userRepository.findByUsernameOrEmail(entity.getUsername(), entity.getEmail());
+    @Override
+    @Transactional
+    public UserResponseDto updateUser(UpdateUserDto dto) {
+        UserEntity user = userRepository.findByUsernameOrEmail(dto.getUsername(), dto.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (user.isPresent()) {
-            UserEntity newEntity = user.get();
-            newEntity.setName(entity.getName());
-            newEntity = userRepository.save(newEntity);
+        userMapper.updateEntityFromDto(dto, user);
+        UserEntity updated = userRepository.save(user);
 
-            return newEntity;
-        } else {
-            throw new ResourceNotFoundException("User not found");
+        return userMapper.toResponse(updated);
+    }
+
+    @Override
+    public UserResponseDto getByUsername(String username) {
+        UserEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+
+        return userMapper.toResponse(user);
+    }
+
+    private Set<RoleEntity> resolveRoles(Set<String> roleNames) {
+        if (roleNames == null || roleNames.isEmpty()) {
+            RoleEntity defaultRole = roleRepository.findByName(RoleName.ROLE_USER)
+                    .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found"));
+            return Set.of(defaultRole);
         }
+
+        return roleNames.stream()
+                .map(name -> {
+                    RoleName roleEnum;
+                    try {
+                        roleEnum = RoleName.valueOf(name);
+                    } catch (IllegalArgumentException e) {
+                        throw new RuntimeException("Invalid role name: " + name);
+                    }
+                    return roleRepository.findByName(roleEnum)
+                            .orElseThrow(() -> new RuntimeException("Role not found: " + name));
+                })
+                .collect(Collectors.toSet());
     }
 
 }

@@ -5,16 +5,15 @@ import com.eny.paymentcollection.constants.ErrorMessageConstant;
 import com.eny.paymentcollection.model.ErrorMessageEntity;
 import com.eny.paymentcollection.repository.ErrorMessageRepository;
 import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedList;
 
 @Service
+@RequiredArgsConstructor
 public class ErrorMessageDataService {
-
-    @Autowired
-    private ErrorMessageRepository errorMessageRepository;
+    private final ErrorMessageRepository errorMessageRepository;
 
     //TODO: This service should run one time! Then please comment " @PostConstruct ".
     @PostConstruct
@@ -25,7 +24,6 @@ public class ErrorMessageDataService {
         if (errorMessageRepository.count() == 0) {
             LinkedList<ErrorMessageEntity> errorMessages = new LinkedList<>();
 
-            errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.NO_ERROR, "No error"));
             errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.AUTHENTICATION_ERROR, "Username or password wrong!"));
             errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.PARSE_ERROR, "Something wrong in your information!"));
             errorMessages.add(new ErrorMessageEntity(ErrorMessageConstant.PROCESS_ERROR, "Something happened while process. Please try again"));

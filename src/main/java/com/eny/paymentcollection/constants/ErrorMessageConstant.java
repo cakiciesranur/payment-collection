@@ -1,10 +1,13 @@
 package com.eny.paymentcollection.constants;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 /**
  * created by kmluns
  **/
+@NoArgsConstructor(access = AccessLevel.NONE)
 public class ErrorMessageConstant {
-    public static final int NO_ERROR = -1;
     public static final int AUTHENTICATION_ERROR = 1;
     public static final int PARSE_ERROR = 2;
     public static final int PROCESS_ERROR = 3;

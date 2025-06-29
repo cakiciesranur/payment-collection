@@ -34,22 +34,24 @@ public class JwtUtil {
 
     @PostConstruct
     public void init() {
+        // For HS512 algorithm, at least 512 bit key is required (64 bytes)
         this.key = Keys.hmacShaKeyFor(jwtSecretKey.getBytes());
     }
 
     public String generateToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
         return Jwts.builder()
-                .setSubject(userPrincipal.getUsername()) // artık neyle login olduysa: username veya email
+                .setSubject(userPrincipal.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationInMillis))
-                .signWith(SignatureAlgorithm.HS512, jwtSecretKey)
+                .signWith(key, SignatureAlgorithm.HS512)  // IMPORTANT: signature with Key object.
                 .compact();
     }
 
-
     public String extractUsername(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build()
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();

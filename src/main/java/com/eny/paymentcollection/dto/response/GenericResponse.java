@@ -4,12 +4,15 @@ import com.eny.paymentcollection.enums.ResponseType;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+/**
+ * Generic response structure for API responses.
+ */
 @Data
 @Accessors(chain = true)
 public class GenericResponse<T> {
 
     private ResponseType responseType;
-    private int errorCode;
+    private Integer errorCode;
     private String message;
     private T data;
 

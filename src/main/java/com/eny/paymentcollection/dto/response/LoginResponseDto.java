@@ -4,11 +4,11 @@ import com.eny.paymentcollection.constants.AuthenticationConstants;
 import lombok.Data;
 
 @Data
-public class JwtAuthenticationResponse {
+public class LoginResponseDto {
     private String accessToken;
     private String tokenType = AuthenticationConstants.BEARER_TOKEN_TYPE;
 
-    public JwtAuthenticationResponse(String accessToken) {
+    public LoginResponseDto(String accessToken) {
         this.accessToken = accessToken;
     }
 }

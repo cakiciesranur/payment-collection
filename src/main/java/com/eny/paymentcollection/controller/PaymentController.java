@@ -1,14 +1,18 @@
 package com.eny.paymentcollection.controller;
 
-import com.eny.paymentcollection.dto.request.PaymentDto;
+import com.eny.paymentcollection.dto.request.PaymentRequestDto;
 import com.eny.paymentcollection.dto.response.GenericResponse;
+import com.eny.paymentcollection.dto.response.PaymentResponseDto;
 import com.eny.paymentcollection.enums.Currency;
 import com.eny.paymentcollection.enums.PaymentStatus;
 import com.eny.paymentcollection.enums.PaymentType;
 import com.eny.paymentcollection.service.GenericResponseService;
-import com.eny.paymentcollection.service.PaymentService;
+import com.eny.paymentcollection.service.IPaymentService;
+import examples.payment.PaymentExamples;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -41,196 +45,129 @@ import java.util.List;
 @Tag(name = "Payment Management", description = "Payment collection operations")
 public class PaymentController {
 
-    private final PaymentService paymentService;
+    private final IPaymentService paymentService;
     private final GenericResponseService genericResponseService;
 
     @GetMapping
     @Operation(summary = "Get all payments with pagination")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<Page<PaymentDto>>> getAllPayments(
-            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Sort field") @RequestParam(defaultValue = "paymentDate") String sortBy,
-            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "desc") String sortDir) {
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR', 'ROLE_MANAGER', 'ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<Page<PaymentResponseDto>>> getAllPayments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "paymentDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
 
-        log.debug("Getting all payments - page: {}, size: {}, sortBy: {}, sortDir: {}",
-                page, size, sortBy, sortDir);
-
-        Page<PaymentDto> payments = paymentService.getAllPayments(page, size, sortBy, sortDir);
-        GenericResponse<Page<PaymentDto>> response = genericResponseService
-                .createResponseNoError("Payments retrieved successfully", payments);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        Page<PaymentResponseDto> result = paymentService.getAllPayments(page, size, sortBy, sortDir);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Payments retrieved successfully", result));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get payment by ID")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<PaymentDto>> getPaymentById(
-            @Parameter(description = "Payment ID") @PathVariable Long id) {
-
-        log.debug("Getting payment by id: {}", id);
-
-        PaymentDto payment = paymentService.getPaymentById(id);
-        GenericResponse<PaymentDto> response = genericResponseService
-                .createResponseNoError("Payment retrieved successfully", payment);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @GetMapping("/customer/{customerId}")
-    @Operation(summary = "Get payments by customer")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<Page<PaymentDto>>> getPaymentsByCustomer(
-            @Parameter(description = "Customer ID") @PathVariable Long customerId,
-            @Parameter(description = "Page number") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Sort field") @RequestParam(defaultValue = "paymentDate") String sortBy,
-            @Parameter(description = "Sort direction") @RequestParam(defaultValue = "desc") String sortDir) {
-
-        log.debug("Getting payments for customer id: {}", customerId);
-
-        Page<PaymentDto> payments = paymentService.getPaymentsByCustomer(customerId, page, size, sortBy, sortDir);
-        GenericResponse<Page<PaymentDto>> response = genericResponseService
-                .createResponseNoError("Customer payments retrieved successfully", payments);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR', 'ROLE_MANAGER', 'ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<PaymentResponseDto>> getPaymentById(@PathVariable Long id) {
+        PaymentResponseDto payment = paymentService.getPaymentById(id);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Payment retrieved successfully", payment));
     }
 
     @PostMapping
-    @Operation(summary = "Create new payment")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR')")
-    public ResponseEntity<GenericResponse<PaymentDto>> createPayment(
-            @Parameter(description = "Payment data") @Valid @RequestBody PaymentDto paymentDto) {
-
-        log.debug("Creating new payment for customer id: {}", paymentDto.getCustomerId());
-
-        PaymentDto createdPayment = paymentService.createPayment(paymentDto);
-        GenericResponse<PaymentDto> response = genericResponseService
-                .createResponseNoError("Payment created successfully", createdPayment);
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    @Operation(
+            summary = "Create new payment",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = PaymentRequestDto.class),
+                            examples = @ExampleObject(name = "Sample Payment", value = PaymentExamples.CREATE_PAYMENT_EXAMPLE)
+                    )
+            )
+    )
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR')")
+    public ResponseEntity<GenericResponse<PaymentResponseDto>> createPayment(
+            @Valid @RequestBody PaymentRequestDto requestDto) {
+        PaymentResponseDto result = paymentService.createPayment(requestDto);
+        return new ResponseEntity<>(genericResponseService.createSuccessResponse("Payment created successfully", result), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update payment")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR')")
-    public ResponseEntity<GenericResponse<PaymentDto>> updatePayment(
-            @Parameter(description = "Payment ID") @PathVariable Long id,
-            @Parameter(description = "Updated payment data") @Valid @RequestBody PaymentDto paymentDto) {
-
-        log.debug("Updating payment with id: {}", id);
-
-        PaymentDto updatedPayment = paymentService.updatePayment(id, paymentDto);
-        GenericResponse<PaymentDto> response = genericResponseService
-                .createResponseNoError("Payment updated successfully", updatedPayment);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR')")
+    public ResponseEntity<GenericResponse<PaymentResponseDto>> updatePayment(
+            @PathVariable Long id,
+            @Valid @RequestBody PaymentRequestDto requestDto) {
+        PaymentResponseDto result = paymentService.updatePayment(id, requestDto);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Payment updated successfully", result));
     }
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update payment status")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR')")
-    public ResponseEntity<GenericResponse<PaymentDto>> updatePaymentStatus(
-            @Parameter(description = "Payment ID") @PathVariable Long id,
-            @Parameter(description = "New payment status") @RequestParam PaymentStatus status) {
-
-        log.debug("Updating payment status with id: {} to status: {}", id, status);
-
-        PaymentDto updatedPayment = paymentService.updatePaymentStatus(id, status);
-        GenericResponse<PaymentDto> response = genericResponseService
-                .createResponseNoError("Payment status updated successfully", updatedPayment);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR')")
+    public ResponseEntity<GenericResponse<PaymentResponseDto>> updatePaymentStatus(
+            @PathVariable Long id,
+            @RequestParam PaymentStatus status) {
+        PaymentResponseDto result = paymentService.updatePaymentStatus(id, status);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Payment status updated successfully", result));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete payment")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<GenericResponse<Void>> deletePayment(
-            @Parameter(description = "Payment ID") @PathVariable Long id) {
-
-        log.debug("Deleting payment with id: {}", id);
-
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<GenericResponse<Void>> deletePayment(@PathVariable Long id) {
         paymentService.deletePayment(id);
-        GenericResponse<Void> response = genericResponseService
-                .createResponseNoError("Payment deleted successfully", null);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Payment deleted successfully", null));
+    }
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/customer/{customerId}")
+    @Operation(summary = "Get payments by customer ID")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR', 'ROLE_MANAGER', 'ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<Page<PaymentResponseDto>>> getPaymentsByCustomer(
+            @PathVariable Long customerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "paymentDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Page<PaymentResponseDto> result = paymentService.getPaymentsByCustomer(customerId, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Customer payments retrieved successfully", result));
     }
 
     @GetMapping("/status/{status}")
     @Operation(summary = "Get payments by status")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<List<PaymentDto>>> getPaymentsByStatus(
-            @Parameter(description = "Payment status") @PathVariable PaymentStatus status) {
-
-        log.debug("Getting payments by status: {}", status);
-
-        List<PaymentDto> payments = paymentService.getPaymentsByStatus(status);
-        GenericResponse<List<PaymentDto>> response = genericResponseService
-                .createResponseNoError("Payments retrieved successfully", payments);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR', 'ROLE_MANAGER', 'ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<List<PaymentResponseDto>>> getPaymentsByStatus(@PathVariable PaymentStatus status) {
+        List<PaymentResponseDto> result = paymentService.getPaymentsByStatus(status);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Payments retrieved successfully", result));
     }
 
-    @GetMapping("/date-range")
-    @Operation(summary = "Get payments by date range")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<List<PaymentDto>>> getPaymentsByDateRange(
-            @Parameter(description = "Start date") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "End date") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-
-        log.debug("Getting payments between dates: {} and {}", startDate, endDate);
-
-        List<PaymentDto> payments = paymentService.getPaymentsByDateRange(startDate, endDate);
-        GenericResponse<List<PaymentDto>> response = genericResponseService
-                .createResponseNoError("Payments retrieved successfully", payments);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @GetMapping("/overdue")
-    @Operation(summary = "Get overdue payments")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR') or hasRole('MANAGER')")
-    public ResponseEntity<GenericResponse<List<PaymentDto>>> getOverduePayments() {
-
-        log.debug("Getting overdue payments");
-
-        List<PaymentDto> payments = paymentService.getOverduePayments();
-        GenericResponse<List<PaymentDto>> response = genericResponseService
-                .createResponseNoError("Overdue payments retrieved successfully", payments);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @GetMapping("/type/{paymentType}")
+    @GetMapping("/type/{type}")
     @Operation(summary = "Get payments by type")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<List<PaymentDto>>> getPaymentsByType(
-            @Parameter(description = "Payment type") @PathVariable PaymentType paymentType) {
-
-        log.debug("Getting payments by type: {}", paymentType);
-
-        List<PaymentDto> payments = paymentService.getPaymentsByType(paymentType);
-        GenericResponse<List<PaymentDto>> response = genericResponseService
-                .createResponseNoError("Payments retrieved successfully", payments);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR', 'ROLE_MANAGER', 'ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<List<PaymentResponseDto>>> getPaymentsByType(@PathVariable PaymentType type) {
+        List<PaymentResponseDto> result = paymentService.getPaymentsByType(type);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Payments retrieved successfully", result));
     }
 
     @GetMapping("/currency/{currency}")
     @Operation(summary = "Get payments by currency")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('COLLECTOR') or hasRole('MANAGER') or hasRole('VIEWER')")
-    public ResponseEntity<GenericResponse<List<PaymentDto>>> getPaymentsByCurrency(
-            @Parameter(description = "Currency") @PathVariable Currency currency) {
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR', 'ROLE_MANAGER', 'ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<List<PaymentResponseDto>>> getPaymentsByCurrency(@PathVariable Currency currency) {
+        List<PaymentResponseDto> result = paymentService.getPaymentsByCurrency(currency);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Payments retrieved successfully", result));
+    }
 
-        log.debug("Getting payments by currency: {}", currency);
+    @GetMapping("/date-range")
+    @Operation(summary = "Get payments between two dates")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR', 'ROLE_MANAGER', 'ROLE_VIEWER')")
+    public ResponseEntity<GenericResponse<List<PaymentResponseDto>>> getPaymentsByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        List<PaymentResponseDto> result = paymentService.getPaymentsByDateRange(startDate, endDate);
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Payments retrieved successfully", result));
+    }
 
-        List<PaymentDto> payments = paymentService.getPaymentsByCurrency(currency);
-        GenericResponse<List<PaymentDto>> response = genericResponseService
-                .createResponseNoError("Payments retrieved successfully", payments);
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/overdue")
+    @Operation(summary = "Get overdue payments")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ACCOUNTANT', 'ROLE_COLLECTOR', 'ROLE_MANAGER')")
+    public ResponseEntity<GenericResponse<List<PaymentResponseDto>>> getOverduePayments() {
+        List<PaymentResponseDto> result = paymentService.getOverduePayments();
+        return ResponseEntity.ok(genericResponseService.createSuccessResponse("Overdue payments retrieved successfully", result));
     }
 }

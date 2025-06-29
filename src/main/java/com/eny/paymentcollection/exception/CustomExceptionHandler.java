@@ -3,8 +3,8 @@ package com.eny.paymentcollection.exception;
 import com.eny.paymentcollection.constants.ErrorMessageConstant;
 import com.eny.paymentcollection.dto.response.GenericResponse;
 import com.eny.paymentcollection.service.GenericResponseService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -17,22 +17,22 @@ import java.util.Map;
 
 @RestControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class CustomExceptionHandler {
 
-    @Autowired
-    private GenericResponseService genericResponseService;
+    private final GenericResponseService genericResponseService;
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<GenericResponse> handleBadRequest(BadRequestException ex) {
         log.error("Bad request: {}", ex.getMessage());
-        GenericResponse response = genericResponseService.createResponseWithError(ex.getMessage());
+        GenericResponse response = genericResponseService.createErrorResponse(ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<GenericResponse> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
         log.error("Email already exists: {}", ex.getMessage());
-        GenericResponse response = genericResponseService.createResponseWithError(
+        GenericResponse response = genericResponseService.createErrorResponse(
                 ErrorMessageConstant.USERNAME_EXIST);
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
@@ -40,7 +40,7 @@ public class CustomExceptionHandler {
     @ExceptionHandler(UsernameAlreadyExistsException.class)
     public ResponseEntity<GenericResponse> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
         log.error("Username already exists: {}", ex.getMessage());
-        GenericResponse response = genericResponseService.createResponseWithError(
+        GenericResponse response = genericResponseService.createErrorResponse(
                 ErrorMessageConstant.USERNAME_EXIST);
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
@@ -48,7 +48,7 @@ public class CustomExceptionHandler {
     @ExceptionHandler(UserCreationException.class)
     public ResponseEntity<GenericResponse> handleUserCreation(UserCreationException ex) {
         log.error("User creation failed: {}", ex.getMessage());
-        GenericResponse response = genericResponseService.createResponseWithError(
+        GenericResponse response = genericResponseService.createErrorResponse(
                 ErrorMessageConstant.PROCESS_ERROR);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -56,21 +56,21 @@ public class CustomExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<GenericResponse> handleResourceNotFound(ResourceNotFoundException ex) {
         log.error("Resource not found: {}", ex.getMessage());
-        GenericResponse response = genericResponseService.createResponseWithError(ex.getMessage());
+        GenericResponse response = genericResponseService.createErrorResponse(ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<GenericResponse> handleDuplicateResource(DuplicateResourceException ex) {
         log.error("Duplicate resource: {}", ex.getMessage());
-        GenericResponse response = genericResponseService.createResponseWithError(ex.getMessage());
+        GenericResponse response = genericResponseService.createErrorResponse(ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(NotAllowedOperationException.class)
     public ResponseEntity<GenericResponse> handleNotAllowedOperation(NotAllowedOperationException ex) {
         log.error("Not allowed operation: {}", ex.getMessage());
-        GenericResponse response = genericResponseService.createResponseWithError(ex.getMessage());
+        GenericResponse response = genericResponseService.createErrorResponse(ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
@@ -85,7 +85,7 @@ public class CustomExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        GenericResponse response = genericResponseService.createResponseWithError(
+        GenericResponse response = genericResponseService.createErrorResponse(
                 "Validation failed", errors);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
@@ -93,7 +93,7 @@ public class CustomExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<GenericResponse> handleGlobalException(Exception ex) {
         log.error("Unexpected error occurred: ", ex);
-        GenericResponse response = genericResponseService.createResponseWithError(
+        GenericResponse response = genericResponseService.createErrorResponse(
                 ErrorMessageConstant.UNKNOWN_ERROR);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }

@@ -4,17 +4,17 @@ package com.eny.paymentcollection.service.error;
 import com.eny.paymentcollection.constants.ErrorMessageConstant;
 import com.eny.paymentcollection.model.ErrorMessageEntity;
 import com.eny.paymentcollection.repository.ErrorMessageRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
  * created by kmluns
  **/
 @Service
+@RequiredArgsConstructor
 public class ErrorMessageService {
 
-    @Autowired
-    private ErrorMessageRepository errorMessageRepository;
+    private final ErrorMessageRepository errorMessageRepository;
 
     public ErrorMessageEntity getErrorMessage(int errorCode) {
         ErrorMessageEntity errorMessage = errorMessageRepository.findByErrorCode(errorCode);

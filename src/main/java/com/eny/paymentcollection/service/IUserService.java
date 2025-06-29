@@ -2,14 +2,16 @@ package com.eny.paymentcollection.service;
 
 import com.eny.paymentcollection.dto.request.SignUpDto;
 import com.eny.paymentcollection.dto.request.UpdateUserDto;
-import com.eny.paymentcollection.model.UserEntity;
+import com.eny.paymentcollection.dto.response.UserResponseDto;
 
 import java.util.List;
 
 public interface IUserService {
-    UserEntity createUser(SignUpDto signUpDto);
+    UserResponseDto createUser(SignUpDto signUpDto);
 
-    List<UserEntity> getAllUsers();
+    List<UserResponseDto> getAllUsers();
 
-    UserEntity updateUser(UpdateUserDto dto);
+    UserResponseDto updateUser(UpdateUserDto dto);
+
+    UserResponseDto getByUsername(String username);
 }

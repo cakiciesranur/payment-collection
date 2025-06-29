@@ -1,7 +1,7 @@
 package com.eny.paymentcollection.mapper;
 
 import com.eny.paymentcollection.dto.request.UpdateUserDto;
-import com.eny.paymentcollection.dto.response.UserResponse;
+import com.eny.paymentcollection.dto.response.UserResponseDto;
 import com.eny.paymentcollection.enums.RoleName;
 import com.eny.paymentcollection.model.RoleEntity;
 import com.eny.paymentcollection.model.UserEntity;
@@ -9,13 +9,15 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring",
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+)
 public interface UserMapper {
 
     // RoleEntity -> RoleName mapping
@@ -27,11 +29,11 @@ public interface UserMapper {
     }
 
     @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoles")
-    UserResponse toResponse(UserEntity entity);
+    UserResponseDto toResponse(UserEntity entity);
 
     UserEntity toEntity(UpdateUserDto dto);
 
     void updateEntityFromDto(UpdateUserDto dto, @MappingTarget UserEntity entity);
 
-    List<UserResponse> toResponseList(List<UserEntity> entities);
+    List<UserResponseDto> toResponseList(List<UserEntity> entities);
 }
