@@ -6,8 +6,12 @@ import com.eny.paymentcollection.dto.response.GenericResponse;
 import com.eny.paymentcollection.enums.CustomerStatus;
 import com.eny.paymentcollection.service.GenericResponseService;
 import com.eny.paymentcollection.service.ICustomerService;
+import examples.customer.CustomerOperationExamples;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/customers")
+@RequestMapping("/api/customer")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
@@ -72,7 +76,15 @@ public class CustomerController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a new customer")
+    @Operation(summary = "Create a new customer",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = CustomerRequestDto.class),
+                            examples = @ExampleObject(name = "Sample Customer", value = CustomerOperationExamples.CREATE_CUSTOMER_REQUEST_EXAMPLE)
+                    )
+            )
+    )
     @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_ACCOUNTANT')")
     public ResponseEntity<GenericResponse<CustomerResponseDto>> createCustomer(
             @Parameter(description = "Customer data") @Valid @RequestBody CustomerRequestDto customerRequestDto) {

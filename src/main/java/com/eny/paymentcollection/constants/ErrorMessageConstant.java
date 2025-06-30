@@ -3,9 +3,6 @@ package com.eny.paymentcollection.constants;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-/**
- * created by kmluns
- **/
 @NoArgsConstructor(access = AccessLevel.NONE)
 public class ErrorMessageConstant {
     public static final int AUTHENTICATION_ERROR = 1;

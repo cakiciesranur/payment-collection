@@ -8,7 +8,7 @@ import com.eny.paymentcollection.enums.PaymentStatus;
 import com.eny.paymentcollection.enums.PaymentType;
 import com.eny.paymentcollection.service.GenericResponseService;
 import com.eny.paymentcollection.service.IPaymentService;
-import examples.payment.PaymentExamples;
+import examples.payment.PaymentOperationExamples;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -38,7 +38,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/api/payment")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
@@ -76,7 +76,7 @@ public class PaymentController {
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = PaymentRequestDto.class),
-                            examples = @ExampleObject(name = "Sample Payment", value = PaymentExamples.CREATE_PAYMENT_EXAMPLE)
+                            examples = @ExampleObject(name = "Sample Payment", value = PaymentOperationExamples.CREATE_PAYMENT_REQUEST_EXAMPLE)
                     )
             )
     )

@@ -7,9 +7,6 @@ import com.eny.paymentcollection.repository.ErrorMessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/**
- * created by kmluns
- **/
 @Service
 @RequiredArgsConstructor
 public class ErrorMessageService {
